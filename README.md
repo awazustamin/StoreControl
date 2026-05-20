@@ -10,7 +10,7 @@
 ## Information & Features
 - ✨ Restore the DemoLoop app intuitively using only the StoreControl app with an easy-to-understand tutorial and graceful user interface.
 - 📚 Choose from several themes by Apple and custom themes made for StoreControl.
-- ⚙️ Easily maintenance the apps when something goes wrong, and try out experimental features right from the settings menu.
+- ⚙️ Easily maintenance the apps when something goes wrong, and try out experimental features right from the settings menu
 
 ## Credits
 - Ian Beer and zhuowei for the MCD & TCCD exploits

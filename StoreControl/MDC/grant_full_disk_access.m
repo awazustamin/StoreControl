@@ -18,8 +18,17 @@
 #import "helpers.h"
 #import "vm_unaligned_copy_switch_race.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 #include <xpc/xpc.h>
+#pragma clang diagnostic pop
 typedef void (^xpc_handler_t)(xpc_object_t object);
+
+// xpc_connection_create_mach_service is marked unavailable on iOS SDK
+// but is accessible at runtime on vulnerable devices (CVE-2022-46689).
+// Redeclare to suppress compile-time unavailability error.
+extern xpc_connection_t xpc_connection_create_mach_service(const char *name, dispatch_queue_t targetq, uint64_t flags) __attribute__((weak_import));
 
 int64_t sandbox_extension_consume(const char* token);
 

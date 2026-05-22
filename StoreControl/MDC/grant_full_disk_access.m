@@ -18,6 +18,7 @@
 #import "helpers.h"
 #import "vm_unaligned_copy_switch_race.h"
 
+#if TARGET_OS_OSX
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunguarded-availability"
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
@@ -29,6 +30,7 @@ typedef void (^xpc_handler_t)(xpc_object_t object);
 // but is accessible at runtime on vulnerable devices (CVE-2022-46689).
 // Redeclare to suppress compile-time unavailability error.
 extern xpc_connection_t xpc_connection_create_mach_service(const char *name, dispatch_queue_t targetq, uint64_t flags) __attribute__((weak_import));
+#endif
 
 int64_t sandbox_extension_consume(const char* token);
 
@@ -188,6 +190,7 @@ static bool patchfind(void* executable_map, size_t executable_length,
 
 // MARK: - tccd patching
 
+#if TARGET_OS_OSX
 static void call_tccd(void (^completion)(NSString* _Nullable extension_token)) {
   // reimplmentation of TCCAccessRequest, as we need to grab and cache the sandbox token so we can
   // re-use it until next reboot.
@@ -238,6 +241,7 @@ static void call_tccd(void (^completion)(NSString* _Nullable extension_token)) {
         completion(extension_nsstring);
       });
 }
+#endif
 
 static NSData* patchTCCD(void* executableMap, size_t executableLength) {
   struct grant_full_disk_access_offsets offsets = {};
@@ -313,6 +317,7 @@ static bool overwrite_file(int fd, NSData* sourceData) {
   return true;
 }
 
+#if TARGET_OS_OSX
 static void grant_full_disk_access_impl(void (^completion)(NSString* extension_token,
                                                            NSError* _Nullable error)) {
   char* targetPath = "/System/Library/PrivateFrameworks/TCC.framework/Support/tccd";
@@ -340,11 +345,11 @@ static void grant_full_disk_access_impl(void (^completion)(NSString* extension_t
     munmap(targetMap, targetLength);
     completion(
         nil, [NSError errorWithDomain:@"ca.bomberfish.fulldiskaccess"
-                                 code:1
-                             userInfo:@{
-                               NSLocalizedDescriptionKey : @"Can't overwrite file: your device may "
-                                                           @"not be vulnerable to CVE-2022-46689."
-                             }]);
+                             code:1
+                         userInfo:@{
+                           NSLocalizedDescriptionKey : @"Can't overwrite file: your device may "
+                                                       @"not be vulnerable to CVE-2022-46689."
+                         }]);
     return;
   }
   munmap(targetMap, targetLength);
@@ -375,6 +380,15 @@ static void grant_full_disk_access_impl(void (^completion)(NSString* extension_t
     completion(extension_token, returnError);
   });
 }
+#else
+static void grant_full_disk_access_impl(void (^completion)(NSString* extension_token,
+                                                           NSError* _Nullable error)) {
+  // Not supported on iOS
+  completion(nil, [NSError errorWithDomain:@"ca.bomberfish.fulldiskaccess"
+                                      code:7
+                                  userInfo:@{NSLocalizedDescriptionKey : @"Not supported on iOS."}]);
+}
+#endif
 
 void grant_full_disk_access(void (^completion)(NSError* _Nullable)) {
   if (!NSClassFromString(@"NSPresentationIntent")) {
@@ -391,7 +405,7 @@ void grant_full_disk_access(void (^completion)(NSError* _Nullable)) {
     return;
   }
   NSURL* documentDirectory = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory
-                                                                  inDomains:NSUserDomainMask][0];
+                                                                inDomains:NSUserDomainMask][0];
   NSURL* sourceURL =
       [documentDirectory URLByAppendingPathComponent:@"full_disk_access_sandbox_token.txt"];
   NSError* error = nil;

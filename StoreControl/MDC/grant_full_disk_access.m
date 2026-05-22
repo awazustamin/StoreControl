@@ -18,23 +18,8 @@
 #import "helpers.h"
 #import "vm_unaligned_copy_switch_race.h"
 
-typedef NSObject* xpc_object_t;
-typedef xpc_object_t xpc_connection_t;
+#include <xpc/xpc.h>
 typedef void (^xpc_handler_t)(xpc_object_t object);
-xpc_object_t xpc_dictionary_create(const char* const _Nonnull* keys,
-                                   xpc_object_t _Nullable const* values, size_t count);
-xpc_connection_t xpc_connection_create_mach_service(const char* name, dispatch_queue_t targetq,
-                                                    uint64_t flags);
-void xpc_connection_set_event_handler(xpc_connection_t connection, xpc_handler_t handler);
-void xpc_connection_resume(xpc_connection_t connection);
-void xpc_connection_send_message_with_reply(xpc_connection_t connection, xpc_object_t message,
-                                            dispatch_queue_t replyq, xpc_handler_t handler);
-xpc_object_t xpc_connection_send_message_with_reply_sync(xpc_connection_t connection,
-                                                         xpc_object_t message);
-xpc_object_t xpc_bool_create(bool value);
-xpc_object_t xpc_string_create(const char* string);
-xpc_object_t xpc_null_create(void);
-const char* xpc_dictionary_get_string(xpc_object_t xdict, const char* key);
 
 int64_t sandbox_extension_consume(const char* token);
 
@@ -432,4 +417,3 @@ void grant_full_disk_access(void (^completion)(NSError* _Nullable)) {
     completion(nil);
   });
 }
-
